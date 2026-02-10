@@ -1,0 +1,9 @@
+crewai
+crewai-tools
+litellm
+requests
+
+# Notes:
+# - Ollama (LLM runtime) is installed separately (https://ollama.com/download).
+# - If you use the SerperDev search tool, follow its auth instructions (API key) —
+#   the search helper in `crewai-tools` may require additional setup.
