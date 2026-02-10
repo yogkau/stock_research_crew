@@ -4,7 +4,8 @@ from crewai_tools import SerperDevTool
 search_tool = SerperDevTool()
 
 llm = LLM(
-    model="ollama/llama3.1",
+    model="ollama/mistral",  
+    #model="ollama/llama3.1",
     base_url="http://localhost:11434",
     temperature=0.2
 )
@@ -38,6 +39,17 @@ decision_agent = Agent(
     role="Investment Decision Maker",
     goal="Provide a clear Buy, Hold, or Avoid decision with reasoning",
     backstory="Senior portfolio manager balancing growth and risk",
+    llm=llm,
+    verbose=True
+)
+
+scoring_agent = Agent(
+    role="Stock Scoring & Allocation Analyst",
+    goal="Assign a quantitative score and final investment decision",
+    backstory=(
+        "Senior investment committee member who converts qualitative "
+        "analysis into structured scores and clear decisions"
+    ),
     llm=llm,
     verbose=True
 )

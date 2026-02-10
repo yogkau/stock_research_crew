@@ -1,6 +1,11 @@
 from crewai import Task
-from agents import market_researcher, technical_analyst, risk_manager, decision_agent
-
+from agents import (
+    market_researcher, 
+    technical_analyst, 
+    risk_manager, 
+    decision_agent,
+    scoring_agent
+)
 
 research_task = Task(
     description="""
@@ -46,4 +51,31 @@ decision_task = Task(
     """,
     expected_output="Final investment decision with justification",
     agent=decision_agent
+)
+
+
+scoring_task = Task(
+    description="""
+    Using all prior analysis for {stock}, assign scores:
+
+    - Business Quality (0–30)
+    - Growth Potential (0–25)
+    - Valuation Attractiveness (0–20)
+    - Risk Profile (0–25)
+
+    Then:
+    - Calculate total score (0–100)
+    - Map to decision:
+        75–100 = BUY
+        50–74  = HOLD
+        0–49   = AVOID
+
+    Output in this format:
+    - Individual scores
+    - Total score
+    - Final decision
+    - 3–5 bullet point justification
+    """,
+    expected_output="Numerical stock score and final decision",
+    agent=scoring_agent
 )
