@@ -1,14 +1,21 @@
 from crewai import Agent, LLM
 from crewai_tools import SerperDevTool
+from perf import TimingLLM, CachingLLM
 
 search_tool = SerperDevTool()
 
-llm = LLM(
-    model="ollama/mistral",  
+_base_llm = LLM(
+    model="ollama/mistral",
     #model="ollama/llama3.1",
     base_url="http://localhost:11434",
     temperature=0.2
 )
+
+# Wrap base LLM with timing and caching to reduce repeated work and record durations
+# TimingLLM records durations to .cache/profile.json
+# CachingLLM stores per-prompt responses in .cache/cache.json
+timed_llm = TimingLLM(_base_llm, model_name="ollama/mistral")
+llm = CachingLLM(timed_llm, model_name="ollama/mistral")
 
 market_researcher = Agent(
     role="Market Research Analyst",
@@ -16,7 +23,7 @@ market_researcher = Agent(
     backstory="Expert in equity research and macro trends",
     tools=[search_tool],   # 🔥 Web search enabled
     llm=llm,
-    verbose=True
+    verbose=False
 )
 
 technical_analyst = Agent(
@@ -24,7 +31,7 @@ technical_analyst = Agent(
     goal="Analyze business strength, valuation logic, and performance trends",
     backstory="Experienced analyst focused on fundamentals",
     llm=llm,
-    verbose=True
+    verbose=False
 )
 
 risk_manager = Agent(
@@ -32,7 +39,7 @@ risk_manager = Agent(
     goal="Identify key risks and downside scenarios",
     backstory="Risk-focused analyst protecting capital",
     llm=llm,
-    verbose=True
+    verbose=False
 )
 
 decision_agent = Agent(
@@ -40,7 +47,7 @@ decision_agent = Agent(
     goal="Provide a clear Buy, Hold, or Avoid decision with reasoning",
     backstory="Senior portfolio manager balancing growth and risk",
     llm=llm,
-    verbose=True
+    verbose=False
 )
 
 scoring_agent = Agent(
@@ -51,5 +58,5 @@ scoring_agent = Agent(
         "analysis into structured scores and clear decisions"
     ),
     llm=llm,
-    verbose=True
+    verbose=False
 )
