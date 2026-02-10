@@ -1,145 +1,126 @@
 📊 AI Stock Research Crew (Local & Free)
+
 Overview
 
-AI Stock Research Crew is a fully local, multi-agent AI system built using CrewAI and Ollama.
-It simulates how a real equity research team works by assigning specialized AI agents to collaborate on stock analysis.
+AI Stock Research Crew is a local, multi-agent system that simulates an equity research team. It uses CrewAI to orchestrate several specialized agents and runs fully locally with Ollama as the LLM runtime (no paid APIs required).
 
-✅ Runs 100% locally
-✅ No OpenAI / no paid APIs
-✅ Ideal for learning AI agents & orchestration
-✅ Portfolio-ready project
+Quick highlights
 
-🎯 Project Objective
+- Runs 100% locally (Ollama + local LLM)
+- No OpenAI or external paid APIs required
+- Designed for learning multi-agent orchestration and building reproducible research workflows
 
-    Given a stock name or ticker, the system produces a structured research report by:
+Project objective
 
-    Researching the company and its sector
+Given a stock name or ticker, the system produces a structured research report by:
 
-    Analyzing fundamentals and business strength
+- Researching the company and its market
+- Producing a qualitative fundamental and technical analysis
+- Identifying material risks
+- Producing a final recommendation and numerical scoring
 
-    Identifying key risks and downside scenarios
+Important: This is educational research software, not financial advice.
 
-⚠️ This project is for education and research only, not financial advice.
+Architecture (Agents & Flow)
 
-🧠 Architecture (Multi-Agent Design)
+The system currently uses five agents, each mapped to a specific task in the pipeline:
 
-The project uses three AI agents, each with a clear responsibility:
+1. `market_researcher` — gathers company description, sector context, competitors, and long-term drivers.
+2. `technical_analyst` — provides qualitative fundamental & technical commentary (revenue, margins, business strength).
+3. `risk_manager` — enumerates business, market, financial, and regulatory risks.
+4. `decision_agent` — synthesizes prior outputs and issues a recommendation (Buy / Hold / Avoid) with confidence and reasoning.
+5. `scoring_agent` — assigns numerical scores (Business Quality, Growth, Valuation, Risk), computes the total (0–100), and maps that to the final decision.
 
-1️⃣ Market Research Analyst
+Processing flow (high level)
 
-    Understands what the company does
+1. `main.py` prompts for a stock ticker/name and calls `stock_crew.kickoff(inputs={'stock': ...})`.
+2. `crew.py` instantiates a `Crew` with the ordered list of agents and tasks.
+3. Crew runs the tasks in sequence: `research_task` → `analysis_task` → `risk_task` → `decision_task` → `scoring_task`.
+4. Each `Task` (in `tasks.py`) runs with its assigned agent; agents are defined/configured in `agents.py`.
+5. Final combined result (structured report + scores) is returned and printed by `main.py`.
 
-    Identifies industry position & competitors
+Project structure (key files)
 
-    Highlights long-term growth drivers
+- `agents.py` — Agent definitions, role prompts, and LLM configuration.
+- `tasks.py` — `Task` objects describing inputs/expected outputs for each agent.
+- `crew.py` — Crew instantiation wiring agents and tasks together.
+- `main.py` — CLI entry point that runs the crew and prints the final report.
+- `requirements.txt` — Python dependencies.
 
-2️⃣ Fundamental & Technical Analyst
+Setup
 
-    Evaluates business quality
+1. Create a virtual environment and activate it (Windows example):
 
-    Analyzes revenue, profitability trends (qualitative)
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
 
-    Assesses valuation logic (over/under valued)
+2. Install Python dependencies:
 
-3️⃣ Risk Assessment Analyst
+```powershell
+pip install -r requirements.txt
+```
 
-    Identifies business, financial, and market risks
+3. Install Ollama (visit https://ollama.com/download) and pull a recommended model (example):
 
-    Highlights red flags and downside scenarios
-
-    Focuses on capital protection
-
-    Each agent works independently, and CrewAI orchestrates their collaboration.
-
-🧰 Tech Stack
-
-    Python 3.10+
-    CrewAI – Multi-agent orchestration
-    LiteLLM – LLM abstraction layer
-    Ollama – Local LLM runtime
-    Llama 3.1 (8B) – Primary language model
-
-🗂 Project Structure
-ai_stock_crew/
-│
-├── agents.py # Agent definitions (roles, goals, LLM config)
-├── tasks.py # Tasks assigned to each agent
-├── crew.py # Crew orchestration
-├── main.py # Entry point
-├── requirements.txt
-└── README.md
-
-⚙️ Setup Instructions
-1️⃣ Create & Activate Virtual Environment
-python -m venv crewai-env
-crewai-env\Scripts\activate
-
-2️⃣ Install Dependencies
-pip install crewai crewai-tools litellm requests
-3️⃣ Install Ollama
-
-Download from:
-👉 https://ollama.com/download
-
-Pull recommended model:
+```powershell
+# Example (adjust model name as needed)
 ollama pull llama3.1
-
-Verify:
 ollama run llama3.1
+```
 
-▶️ How to Run the Project
+Running the project
+
+```powershell
 python main.py
+```
 
-When prompted:
-Enter stock name or ticker: Apple
+Enter a stock name or ticker when prompted (for example: `Apple` or `AAPL`). The system will execute each agent in order and print a structured final report.
 
-The system will:
-Execute each agent step-by-step
-Print a structured stock research report
+Example output (abbreviated)
 
-🧪 Example Output (High-Level)
-Company Overview:
-Apple is a global consumer technology company...
+## FINAL STOCK RESEARCH REPORT
 
-Fundamental Analysis:
-Strong brand, high margins, premium valuation...
+Company overview: <company description & sector context>
 
-Risk Assessment:
-Revenue concentration in iPhone, regulatory risks...
+Fundamental analysis: <qualitative revenue/profit/commentary>
 
-💡 Key Learning Outcomes
+Risk analysis: <enumerated risks & red flags>
 
-    By building this project, you learn:
+Decision: BUY / HOLD / AVOID (with confidence level)
 
-    How to design AI agents with roles & goals
+Scores:
 
-    How multi-agent collaboration works
+- Business Quality: 24/30
+- Growth Potential: 18/25
+- Valuation: 14/20
+- Risk Profile: 20/25
+- Total: 76/100 → BUY
 
-    How to run LLMs locally using Ollama
+Notes on customization
 
-    How CrewAI orchestrates task execution
+- Tasks and agent prompts are in `tasks.py` and `agents.py` — edit them to change agent behavior or expected outputs.
+- The `Crew` is configured in `crew.py`; reorder agents/tasks to change execution order.
 
-    How to scale from simple prompts to agent systems
+Troubleshooting
 
-🚀 Future Enhancements (Planned)
+- If Ollama or the chosen model is not installed, the LLM calls will fail — ensure `ollama` is available on PATH and the model is pulled.
+- If you see authentication or network errors, confirm you're running fully local models or check the environment for any external API keys.
 
-    Buy / Hold / Avoid scoring system
+Contributing & Future work
 
-    Web search tool for real-time context
+- Add a web UI (Streamlit) for interactive use
+- Integrate live web search or data sources (careful with external APIs)
+- Add caching/memory and agent-to-agent long-term memory
 
-    Portfolio-level analysis
+License & Disclaimer
 
-    Streamlit UI
+This repository is intended for education and research only. Not financial advice. Use at your own risk.
 
-    Technical indicators integration
+Author
 
-    Agent memory & caching
+Yogesh Kaushik
 
-🔒 Disclaimer
-
-This project is for educational purposes only.
-It does not provide investment advice or real-time financial data.
-
-🧭 Author - Yogesh Kaushik
-
-Built as a hands-on learning project for AI Agents & Autonomous Systems using CrewAI.
+--
+Updated README to reflect the current 5-agent pipeline and processing flow.
