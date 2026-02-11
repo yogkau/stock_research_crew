@@ -9,6 +9,10 @@ AI Stock Research Crew is a local, multi-agent system that simulates an equity r
 **Key Features:**
 - ✅ Runs 100% locally (Ollama + local LLM)
 - ✅ No OpenAI or external paid APIs required
+- ✅ **Portfolio analysis** - Analyze multiple stocks together
+- ✅ **Batch processing** - Process stocks in parallel
+- ✅ **Comparative analysis** - Compare stocks side-by-side
+- ✅ **Portfolio allocation** - Get recommended allocations
 - ✅ Smart caching with expiration (30-40% faster)
 - ✅ Automatic retry with exponential backoff (95% fewer crashes)
 - ✅ Configurable via environment variables
@@ -61,15 +65,23 @@ cp .env.example .env
 
 ### 4. Run
 
+**Single Stock Analysis:**
 ```bash
 python main.py
 ```
 
-Enter a stock ticker (e.g., `AAPL`, `GOOGL`) when prompted.
+**Portfolio Analysis (Multiple Stocks):**
+```bash
+python main_portfolio.py
+```
+
+Or use the interactive menu in `main_portfolio.py` to choose between single stock or portfolio mode.
 
 ---
 
 ## 📋 What It Does
+
+### Single Stock Analysis
 
 Given a stock name or ticker, the system produces a comprehensive research report:
 
@@ -78,7 +90,19 @@ Given a stock name or ticker, the system produces a comprehensive research repor
 3. **Risk Assessment** - Business, market, financial, and regulatory risks
 4. **Investment Decision** - BUY/HOLD/AVOID with confidence level and scoring
 
+### Portfolio Analysis (NEW! 🎉)
+
+Given multiple stock tickers, the system provides:
+
+1. **Individual Analysis** - Complete analysis for each stock
+2. **Comparative Analysis** - Side-by-side comparison with rankings
+3. **Portfolio Allocation** - Recommended percentage allocation for each stock
+4. **Diversification Assessment** - Sector exposure and risk concentration
+5. **Portfolio Strategy** - Core vs satellite holdings, rebalancing triggers
+
 ### Example Output
+
+**Single Stock:**
 
 ```
 ============================================================
@@ -111,11 +135,42 @@ Key Reasoning:
 ============================================================
 ```
 
+**Portfolio Analysis:**
+
+```
+============================================================
+PORTFOLIO ANALYSIS & ALLOCATION
+============================================================
+
+Comparative Rankings:
+1. AAPL - Score: 86/100 (BUY)
+2. MSFT - Score: 82/100 (BUY)
+3. GOOGL - Score: 78/100 (BUY)
+
+Recommended Allocation ($100,000 portfolio):
+- AAPL: 35% ($35,000) - Core holding, strong fundamentals
+- MSFT: 35% ($35,000) - Core holding, diversification
+- GOOGL: 30% ($30,000) - Satellite holding, growth potential
+
+Diversification Scores:
+- Sector Diversification: 65/100 (Tech-heavy)
+- Risk Diversification: 78/100 (Good balance)
+
+Portfolio Risk: Medium
+Overall Balance: Well-balanced with growth focus
+
+Key Recommendations:
+- Consider adding non-tech stocks for better diversification
+- All three stocks show strong fundamentals
+- Monitor tech sector correlation during downturns
+============================================================
+```
+
 ---
 
 ## 🏗️ Architecture
 
-### Agent Pipeline (4 Agents)
+### Single Stock Analysis (4 Agents)
 
 ```
 market_researcher → fundamental_analyst → risk_manager → investment_advisor
@@ -126,15 +181,22 @@ market_researcher → fundamental_analyst → risk_manager → investment_adviso
 3. **Risk Manager** - Identifies and rates all material risks
 4. **Investment Advisor** - Synthesizes analysis into decision + scores
 
-**Improvement**: Reduced from 5 to 4 agents by consolidating decision-making (~20% faster)
-
-### Task Flow
+### Portfolio Analysis (6 Agents)
 
 ```
-Research Task → Analysis Task → Risk Task → Investment Decision Task
+[Stock 1] → 4 agents → Individual Report
+[Stock 2] → 4 agents → Individual Report  ⇓
+[Stock N] → 4 agents → Individual Report
+                ⇓
+    portfolio_analyst → Comparative Analysis
+                ⇓
+    diversification_analyst → Portfolio Allocation
 ```
 
-Each task has clear requirements and expected outputs for consistent results.
+5. **Portfolio Analyst** - Compares stocks, ranks them, identifies best/worst
+6. **Diversification Analyst** - Assesses diversification, recommends allocation
+
+**Improvement**: Reduced from 5 to 4 agents per stock (~20% faster)
 
 ---
 
@@ -142,20 +204,25 @@ Each task has clear requirements and expected outputs for consistent results.
 
 ```
 stock_research_crew/
-├── agents.py          # Agent definitions with LLM config
-├── tasks.py           # Task definitions and prompts
-├── crew.py            # Crew orchestration
-├── main.py            # CLI entry point
-├── config.py          # Centralized configuration
-├── cache.py           # Smart caching with expiration
-├── perf.py            # Performance wrappers with retry logic
-├── requirements.txt   # Python dependencies
-├── .env.example       # Configuration template
-├── backup/            # Original files (pre-improvements)
-└── .cache/            # Cache and logs (auto-created)
-    ├── cache.json     # Cached results
-    ├── profile.json   # Performance metrics
-    └── app.log        # Application logs
+├── agents.py              # Agent definitions with LLM config
+├── tasks.py               # Task definitions and prompts
+├── crew.py                # Single stock crew orchestration
+├── main.py                # CLI entry point (single stock)
+├── portfolio_agents.py    # Portfolio-specific agents (NEW)
+├── portfolio_tasks.py     # Portfolio-specific tasks (NEW)
+├── portfolio_crew.py      # Portfolio crew orchestration (NEW)
+├── portfolio_analyzer.py  # Batch processing logic (NEW)
+├── main_portfolio.py      # CLI for portfolio analysis (NEW)
+├── config.py              # Centralized configuration
+├── cache.py               # Smart caching with expiration
+├── perf.py                # Performance wrappers with retry logic
+├── requirements.txt       # Python dependencies
+├── .env.example           # Configuration template
+├── backup/                # Original files (pre-improvements)
+└── .cache/                # Cache and logs (auto-created)
+    ├── cache.json         # Cached results
+    ├── profile.json       # Performance metrics
+    └── app.log            # Application logs
 ```
 
 ---
@@ -264,6 +331,25 @@ print(f"Total calls: {len(calls)}")
 ---
 
 ## 🔧 Customization
+
+### Portfolio Analysis Options
+
+```python
+from stock_research_crew.portfolio_analyzer import PortfolioAnalyzer
+
+# Create analyzer
+analyzer = PortfolioAnalyzer(
+    stocks=["AAPL", "GOOGL", "MSFT"],
+    portfolio_size=100000
+)
+
+# Run with parallel processing
+report = analyzer.generate_full_report(parallel=True)
+
+# Access results
+print(report["individual_analyses"])
+print(report["portfolio_analysis"])
+```
 
 ### Modify Agent Behavior
 
@@ -379,8 +465,16 @@ if st.button("Analyze"):
 ### Example: Batch Processing
 
 ```python
-stocks = ["AAPL", "GOOGL", "MSFT"]
-results = stock_crew.kickoff_batch([{"stock": s} for s in stocks])
+# Portfolio analysis with custom settings
+from stock_research_crew.portfolio_analyzer import PortfolioAnalyzer
+
+analyzer = PortfolioAnalyzer(
+    stocks=["AAPL", "GOOGL", "MSFT", "AMZN"],
+    portfolio_size=250000
+)
+
+report = analyzer.generate_full_report(parallel=True)
+print(report["portfolio_analysis"])
 ```
 
 ---
